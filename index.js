@@ -71,12 +71,43 @@ async function run() {
       }
     });
 
+    // app.patch("/users/:email/profile", async (req, res) => {
+    //   try {
+    //     const email = req.params.email;
+    //     const { name, photoURL, phone, address } = req.body;
+
+    //     // Only update provided fields
+    //     const updateFields = {};
+    //     if (name) updateFields.name = name;
+    //     if (photoURL) updateFields.photoURL = photoURL;
+    //     if (phone) updateFields.phone = phone;
+    //     if (address) updateFields.address = address;
+
+    //     if (Object.keys(updateFields).length === 0) {
+    //       return res.status(400).json({ success: false, message: "No profile fields provided to update" });
+    //     }
+
+    //     const result = await usersCollection.updateOne(
+    //       { email },
+    //       { $set: { ...updateFields, updated_at: new Date() } }
+    //     );
+
+    //     if (result.matchedCount === 0) {
+    //       return res.status(404).json({ success: false, message: "User not found" });
+    //     }
+
+    //     res.json({ success: true, message: "Profile updated successfully", data: result });
+    //   } catch (error) {
+    //     console.error(error);
+    //     res.status(500).json({ success: false, message: "Failed to update profile" });
+    //   }
+    // });
+
     app.patch("/users/:email/profile", async (req, res) => {
       try {
-        const email = req.params.email;
+        const email = req.params.email.toLowerCase();
         const { name, photoURL, phone, address } = req.body;
 
-        // Only update provided fields
         const updateFields = {};
         if (name) updateFields.name = name;
         if (photoURL) updateFields.photoURL = photoURL;
@@ -84,7 +115,7 @@ async function run() {
         if (address) updateFields.address = address;
 
         if (Object.keys(updateFields).length === 0) {
-          return res.status(400).json({ success: false, message: "No profile fields provided to update" });
+          return res.status(400).json({ success: false, message: "No fields to update" });
         }
 
         const result = await usersCollection.updateOne(
@@ -98,7 +129,7 @@ async function run() {
 
         res.json({ success: true, message: "Profile updated successfully", data: result });
       } catch (error) {
-        console.error(error);
+        console.error("Profile update error:", error);
         res.status(500).json({ success: false, message: "Failed to update profile" });
       }
     });
@@ -165,7 +196,7 @@ async function run() {
           return res.status(400).json({ success: false, message: "Search query required" });
         }
 
-        const searchRegex = new RegExp(q, "i"); 
+        const searchRegex = new RegExp(q, "i");
         const results = await servicesCollection
           .find({
             $or: [
