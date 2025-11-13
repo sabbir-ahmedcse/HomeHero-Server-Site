@@ -156,6 +156,35 @@ async function run() {
       }
     });
 
+    // 🔍 Search Services by Name, Category, or Description
+    app.get("/services/search", async (req, res) => {
+      try {
+        const { q } = req.query; // e.g., /services/search?q=cleaning
+
+        if (!q || q.trim() === "") {
+          return res.status(400).json({ success: false, message: "Search query required" });
+        }
+
+        const searchRegex = new RegExp(q, "i"); 
+        const results = await servicesCollection
+          .find({
+            $or: [
+              { name: { $regex: searchRegex } },
+              { category: { $regex: searchRegex } },
+              { description: { $regex: searchRegex } },
+            ],
+          })
+          .sort({ created_at: -1 })
+          .toArray();
+
+        res.json({ success: true, count: results.length, data: results });
+      } catch (error) {
+        console.error("Search error:", error);
+        res.status(500).json({ success: false, message: "Failed to search services" });
+      }
+    });
+
+
     // Get Single Service
     app.get("/services/:id", async (req, res) => {
       try {
@@ -278,12 +307,12 @@ async function run() {
     });
 
     app.get("/health", (req, res) => {
-      res.json({ success: true, message: "Server is healthy ✅" });
+      res.json({ success: true, message: "Server is healthy " });
     });
 
     // Start Server
     app.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}`);
+      console.log(`Server running on :${port}`);
     });
   } catch (err) {
     console.error("MongoDB connection failed:", err);
