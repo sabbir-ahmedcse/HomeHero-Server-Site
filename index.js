@@ -6,6 +6,10 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
 
+const decoded = Buffer.from(process.env.FIREBASE_SERVICES_KEY, "base64").toString("utf8");
+const serviceAccount = JSON.parse(decoded);
+
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -64,6 +68,38 @@ async function run() {
         res.json({ success: true, data: user });
       } catch (error) {
         res.status(500).json({ success: false, message: "Failed to get user" });
+      }
+    });
+
+    app.patch("/users/:email/profile", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const { name, photoURL, phone, address } = req.body;
+
+        // Only update provided fields
+        const updateFields = {};
+        if (name) updateFields.name = name;
+        if (photoURL) updateFields.photoURL = photoURL;
+        if (phone) updateFields.phone = phone;
+        if (address) updateFields.address = address;
+
+        if (Object.keys(updateFields).length === 0) {
+          return res.status(400).json({ success: false, message: "No profile fields provided to update" });
+        }
+
+        const result = await usersCollection.updateOne(
+          { email },
+          { $set: { ...updateFields, updated_at: new Date() } }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        res.json({ success: true, message: "Profile updated successfully", data: result });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Failed to update profile" });
       }
     });
 
